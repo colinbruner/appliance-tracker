@@ -23,7 +23,7 @@
   }
 </script>
 
-<article class="card" style="--accent: {meta.border}; --accent-bg: {meta.bg};">
+<article class="card" style="--accent: {meta.bar};">
   <header class="card-header">
     <div>
       <span class="type-label">{appliance.type}</span>
@@ -32,7 +32,7 @@
         <p class="subtitle">{[appliance.brand, appliance.model].filter(Boolean).join(' · ')}</p>
       {/if}
     </div>
-    <span class="status-pill" style="background:{meta.bg}; color:{meta.text}; border-color:{meta.border}">
+    <span class="status-pill" style="color:{meta.bar}; border-color:{meta.bar}66; background:{meta.bar}1a">
       {meta.label}
     </span>
   </header>
@@ -50,7 +50,7 @@
       </span>
       <span>{Math.round(info.percentUsed)}% of {appliance.expectedLifespan} yr lifespan</span>
     </div>
-    <p class="years-remaining" style="color:{meta.text}">{formatYearsRemaining(info.remainingYears)}</p>
+    <p class="years-remaining" style="color:{meta.bar}">{formatYearsRemaining(info.remainingYears)}</p>
   </div>
 
   <!-- Key dates -->
@@ -101,17 +101,17 @@
 
 <style>
   .card {
-    background: #fff;
+    background: var(--surface);
     border-radius: 12px;
     border-left: 4px solid var(--accent);
     padding: 1.125rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-sm);
     transition: box-shadow 0.2s;
   }
-  .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+  .card:hover { box-shadow: var(--shadow-md); }
 
   .card-header {
     display: flex;
@@ -125,20 +125,20 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: var(--text-3);
   }
 
   .name {
     font-size: 1rem;
     font-weight: 650;
-    color: #0f172a;
+    color: var(--text-1);
     margin-top: 0.1rem;
     line-height: 1.3;
   }
 
   .subtitle {
     font-size: 0.78rem;
-    color: #64748b;
+    color: var(--text-2);
     margin-top: 0.15rem;
   }
 
@@ -160,7 +160,7 @@
 
   .progress-track {
     height: 7px;
-    background: #e2e8f0;
+    background: var(--border);
     border-radius: 100px;
     overflow: hidden;
   }
@@ -173,7 +173,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.72rem;
-    color: #64748b;
+    color: var(--text-2);
   }
   .years-remaining {
     font-size: 0.875rem;
@@ -187,13 +187,13 @@
     gap: 0.2rem 0.75rem;
     font-size: 0.75rem;
   }
-  dt { color: #94a3b8; }
-  dd { color: #475569; }
+  dt { color: var(--text-3); }
+  dd { color: var(--text-2); }
 
   /* Replacement plan */
   .plan-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.625rem 0.875rem;
     display: flex;
@@ -205,7 +205,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: var(--text-3);
   }
   .plan-row {
     display: flex;
@@ -213,13 +213,13 @@
     align-items: center;
     gap: 0.5rem;
   }
-  .plan-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; }
-  .plan-cost { font-size: 0.875rem; font-weight: 700; color: #6366f1; }
-  .plan-notes { font-size: 0.75rem; color: #64748b; }
+  .plan-name { font-size: 0.875rem; font-weight: 600; color: var(--text-1); }
+  .plan-cost { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+  .plan-notes { font-size: 0.75rem; color: var(--text-2); }
 
   .notes {
     font-size: 0.78rem;
-    color: #94a3b8;
+    color: var(--text-2);
     font-style: italic;
   }
 
@@ -228,25 +228,25 @@
     display: flex;
     gap: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-dim);
     margin-top: 0.25rem;
   }
 
   .btn-sm {
     background: none;
-    border: 1px solid #e2e8f0;
-    color: #475569;
+    border: 1px solid var(--border);
+    color: var(--text-2);
     padding: 0.325rem 0.75rem;
     border-radius: 6px;
     font-size: 0.78rem;
     font-weight: 500;
     transition: background 0.12s, border-color 0.12s;
   }
-  .btn-sm:hover { background: #f8fafc; border-color: #94a3b8; }
+  .btn-sm:hover { background: var(--surface-2); border-color: var(--text-3); }
 
-  .btn-plan { color: #6366f1; border-color: #c7d2fe; }
-  .btn-plan:hover { background: #eef2ff; border-color: #6366f1; }
+  .btn-plan { color: var(--primary); border-color: var(--primary-border); }
+  .btn-plan:hover { background: var(--primary-subtle); border-color: var(--primary); }
 
   .btn-danger { margin-left: auto; color: #ef4444; border-color: #fecaca; }
-  .btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
+  .btn-danger:hover { background: rgba(239,68,68,0.08); border-color: #ef4444; }
 </style>

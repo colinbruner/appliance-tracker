@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-const STORAGE_KEY = 'appliance-tracker-v1';
+const PREFIX = 'at-appliances';
 
 /** Seeded sample data so the app is useful on first launch */
 const SAMPLE_APPLIANCES = [
@@ -79,26 +79,41 @@ const SAMPLE_APPLIANCES = [
   }
 ];
 
-function loadInitial() {
+let _userId = null;
+let _set = null;
+let _update = null;
+
+function storageKey() {
+  return _userId ? `${PREFIX}-${_userId}` : `${PREFIX}-demo`;
+}
+
+function load() {
   if (!browser) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     return raw ? JSON.parse(raw) : SAMPLE_APPLIANCES;
   } catch {
     return SAMPLE_APPLIANCES;
   }
 }
 
-function createApplianceStore() {
-  const { subscribe, update } = writable(loadInitial());
+function persist(list) {
+  if (browser) localStorage.setItem(storageKey(), JSON.stringify(list));
+  return list;
+}
 
-  function persist(list) {
-    if (browser) localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    return list;
-  }
+function createStore() {
+  const { subscribe, set, update } = writable([]);
+  _set = set;
+  _update = update;
 
   return {
     subscribe,
+    setUser(userId) {
+      if (userId === _userId) return;
+      _userId = userId;
+      set(load());
+    },
     add(appliance) {
       update(list => persist([...list, { ...appliance, id: crypto.randomUUID() }]));
     },
@@ -111,4 +126,4 @@ function createApplianceStore() {
   };
 }
 
-export const applianceStore = createApplianceStore();
+export const applianceStore = createStore();

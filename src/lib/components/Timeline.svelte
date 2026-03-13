@@ -5,6 +5,9 @@
   /** @type {any[]} */
   export let appliances = [];
 
+  /** @type {boolean} */
+  export let isDark = true;
+
   let canvas;
   let chart = null;
   let ChartConstructor = null;
@@ -47,6 +50,13 @@
     const minYear = Math.floor(Math.min(...allValues, currentYearDecimal)) - 0.5;
     const maxYear = Math.ceil(Math.max(...allValues, currentYearDecimal)) + 1.5;
 
+    // Theme-dependent colors
+    const gridColor     = isDark ? '#334155'                : '#e2e8f0';
+    const tickColor     = isDark ? '#94a3b8'                : '#64748b';
+    const todayLine     = isDark ? 'rgba(241,245,249,0.65)' : 'rgba(30,41,59,0.65)';
+    const labelBg       = isDark ? 'rgba(241,245,249,0.9)'  : 'rgba(30,41,59,0.85)';
+    const labelText     = isDark ? '#0f172a'                : '#ffffff';
+
     /** Custom plugin: draws a dashed "Today" vertical line */
     const todayLinePlugin = {
       id: 'todayLine',
@@ -59,7 +69,7 @@
         ctx.beginPath();
         ctx.moveTo(xPos, chartArea.top);
         ctx.lineTo(xPos, chartArea.bottom);
-        ctx.strokeStyle = 'rgba(30,41,59,0.65)';
+        ctx.strokeStyle = todayLine;
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 4]);
         ctx.stroke();
@@ -71,11 +81,11 @@
         const tw = ctx.measureText(label).width;
         const px = xPos - tw / 2 - 5;
         const py = chartArea.top - 20;
-        ctx.fillStyle = 'rgba(30,41,59,0.85)';
+        ctx.fillStyle = labelBg;
         ctx.beginPath();
         ctx.rect(px, py, tw + 10, 16);
         ctx.fill();
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = labelText;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, xPos, py + 8);
@@ -107,20 +117,20 @@
             type: 'linear',
             min: minYear,
             max: maxYear,
-            grid: { color: '#e2e8f0' },
+            grid: { color: gridColor },
             ticks: {
               stepSize: 1,
               callback: (v) => Number.isInteger(Math.round(v)) && Math.abs(v - Math.round(v)) < 0.01
                 ? Math.round(v)
                 : '',
               font: { size: 11 },
-              color: '#64748b'
+              color: tickColor
             },
-            border: { color: '#cbd5e1' }
+            border: { color: gridColor }
           },
           y: {
             grid: { display: false },
-            ticks: { font: { size: 12 }, color: '#374151' },
+            ticks: { font: { size: 12 }, color: tickColor },
             border: { display: false }
           }
         },
@@ -173,8 +183,8 @@
     ChartConstructor = Chart;
   });
 
-  // Recreate chart whenever ChartConstructor becomes available or appliances change
-  $: ChartConstructor, appliances, (() => renderChart(appliances))();
+  // Recreate chart whenever ChartConstructor becomes available, appliances change, or isDark changes
+  $: ChartConstructor, appliances, isDark, (() => renderChart(appliances))();
 
   onDestroy(() => chart?.destroy());
 
@@ -210,7 +220,7 @@
   .empty {
     text-align: center;
     padding: 3rem 1rem;
-    color: #94a3b8;
+    color: var(--text-2);
     font-size: 0.9rem;
   }
 
@@ -227,7 +237,7 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--text-2);
   }
 
   .dot {

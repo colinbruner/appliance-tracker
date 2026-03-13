@@ -198,17 +198,17 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(15,23,42,0.55);
+    background: rgba(0,0,0,0.6);
     backdrop-filter: blur(2px);
     z-index: -1;
   }
 
   .modal {
-    background: #fff;
+    background: var(--surface);
     border-radius: 14px;
     width: 100%;
     max-width: 620px;
-    box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
   }
 
@@ -221,18 +221,18 @@
   .modal-header h2 {
     font-size: 1.175rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-1);
   }
   .close {
     background: none;
     border: none;
     font-size: 1rem;
-    color: #94a3b8;
+    color: var(--text-3);
     padding: 0.25rem 0.4rem;
     border-radius: 6px;
     line-height: 1;
   }
-  .close:hover { background: #f1f5f9; color: #1e293b; }
+  .close:hover { background: var(--surface-2); color: var(--text-1); }
 
   form {
     padding: 1.25rem 1.5rem 1.5rem;
@@ -248,9 +248,9 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #94a3b8;
+    color: var(--text-3);
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
   }
 
   .section-title-row {
@@ -261,14 +261,14 @@
 
   .toggle-btn {
     background: none;
-    border: 1px solid #c7d2fe;
-    color: #6366f1;
+    border: 1px solid var(--primary-border);
+    color: var(--primary);
     font-size: 0.78rem;
     font-weight: 600;
     padding: 0.25rem 0.75rem;
     border-radius: 6px;
   }
-  .toggle-btn:hover { background: #eef2ff; }
+  .toggle-btn:hover { background: var(--primary-subtle); }
 
   .row {
     display: grid;
@@ -282,32 +282,32 @@
     gap: 0.3rem;
     font-size: 0.825rem;
     font-weight: 550;
-    color: #374151;
+    color: var(--text-2);
   }
 
   .hint {
     font-size: 0.72rem;
     font-weight: 400;
-    color: #94a3b8;
+    color: var(--text-3);
   }
 
   .req { color: #ef4444; }
 
   input, select, textarea {
     padding: 0.5rem 0.7rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 7px;
     font-size: 0.875rem;
-    color: #1e293b;
-    background: #fafafa;
+    color: var(--text-1);
+    background: var(--surface-input);
     transition: border-color 0.15s, box-shadow 0.15s;
     width: 100%;
   }
   input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-subtle);
+    background: var(--surface-input);
   }
   textarea { resize: vertical; }
 
@@ -316,22 +316,22 @@
     justify-content: flex-end;
     gap: 0.75rem;
     padding-top: 0.25rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-dim);
   }
 
   .btn-cancel {
     background: none;
-    border: 1px solid #e2e8f0;
-    color: #475569;
+    border: 1px solid var(--border);
+    color: var(--text-2);
     padding: 0.575rem 1.375rem;
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 550;
   }
-  .btn-cancel:hover { background: #f8fafc; }
+  .btn-cancel:hover { background: var(--surface-2); }
 
   .btn-save {
-    background: #6366f1;
+    background: var(--primary);
     color: #fff;
     border: none;
     padding: 0.575rem 1.5rem;
@@ -340,7 +340,7 @@
     font-weight: 600;
     transition: background 0.15s;
   }
-  .btn-save:hover { background: #4f46e5; }
+  .btn-save:hover { background: var(--primary-hover); }
 
   @media (max-width: 520px) {
     .row { grid-template-columns: 1fr; }

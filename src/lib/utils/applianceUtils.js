@@ -1,10 +1,10 @@
 /** @typedef {'good'|'warning'|'critical'|'overdue'} ApplianceStatus */
 
 export const STATUS_META = {
-  good:     { label: 'Good',         bg: '#dcfce7', border: '#22c55e', text: '#15803d', bar: '#22c55e' },
-  warning:  { label: 'Due Soon',     bg: '#fef9c3', border: '#eab308', text: '#a16207', bar: '#eab308' },
-  critical: { label: 'Replace Soon', bg: '#ffedd5', border: '#f97316', text: '#c2410c', bar: '#f97316' },
-  overdue:  { label: 'Overdue',      bg: '#fee2e2', border: '#ef4444', text: '#b91c1c', bar: '#ef4444' },
+  good:     { label: 'Good',         bar: '#22c55e' },
+  warning:  { label: 'Due Soon',     bar: '#f59e0b' },
+  critical: { label: 'Replace Soon', bar: '#f97316' },
+  overdue:  { label: 'Overdue',      bar: '#ef4444' },
 };
 
 /**
