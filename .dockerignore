@@ -1,9 +1,0 @@
-node_modules
-.svelte-kit
-build
-.git
-.env
-.env.*
-!.env.example
-*.md
-k8s
