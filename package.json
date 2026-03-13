@@ -1,0 +1,20 @@
+{
+  "name": "appliance-tracker",
+  "version": "1.0.0",
+  "description": "Track home appliances expected EOL and possible future cost for financial planning.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^2.0.3",
+    "@sveltejs/kit": "^1.30.4",
+    "svelte": "^4.2.20",
+    "vite": "^4.5.14"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.2"
+  }
+}

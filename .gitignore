@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+
+# Build artifacts
+dist
+build
+.svelte-kit
+.vercel_build_output
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# IDE and OS files
+.DS_Store
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode/
+
+# Other temporary files
+test-results/
+_tmp_flaky_test_output.txt
+vite.config.js.timestamp-*
+
+
