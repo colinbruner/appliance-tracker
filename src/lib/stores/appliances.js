@@ -1,7 +1,15 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { createClient } from '@supabase/supabase-js';
 
 const PREFIX = 'at-appliances';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+function isSupabaseConfigured() {
+  return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
 
 /** Seeded sample data so the app is useful on first launch */
 const SAMPLE_APPLIANCES = [
@@ -80,8 +88,19 @@ const SAMPLE_APPLIANCES = [
 ];
 
 let _userId = null;
-let _set = null;
-let _update = null;
+let _idToken = null;
+let _supabase = null;
+
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      accessToken: () => _idToken
+    });
+  }
+  return _supabase;
+}
+
+// --- localStorage helpers ---
 
 function storageKey() {
   return _userId ? `${PREFIX}-${_userId}` : `${PREFIX}-demo`;
@@ -102,26 +121,107 @@ function persist(list) {
   return list;
 }
 
+// --- Supabase field mapping ---
+
+function toRow(appliance) {
+  return {
+    id: appliance.id,
+    user_id: _userId,
+    type: appliance.type || null,
+    name: appliance.name || null,
+    brand: appliance.brand || null,
+    model: appliance.model || null,
+    purchase_date: appliance.purchaseDate || null,
+    purchase_price: appliance.purchasePrice ?? null,
+    expected_lifespan: appliance.expectedLifespan ?? null,
+    notes: appliance.notes || null,
+    replacement_plan: appliance.replacementPlan || null
+  };
+}
+
+function fromRow(row) {
+  return {
+    id: row.id,
+    type: row.type ?? '',
+    name: row.name ?? '',
+    brand: row.brand ?? '',
+    model: row.model ?? '',
+    purchaseDate: row.purchase_date ?? '',
+    purchasePrice: row.purchase_price != null ? Number(row.purchase_price) : null,
+    expectedLifespan: row.expected_lifespan ?? null,
+    notes: row.notes ?? '',
+    replacementPlan: row.replacement_plan ?? null
+  };
+}
+
+async function loadFromSupabase() {
+  const { data, error } = await getSupabase()
+    .from('appliances')
+    .select('*')
+    .eq('user_id', _userId);
+  if (error) {
+    console.error('Supabase load error:', error);
+    return [];
+  }
+  return (data ?? []).map(fromRow);
+}
+
+// --- Store ---
+
 function createStore() {
   const { subscribe, set, update } = writable([]);
-  _set = set;
-  _update = update;
 
   return {
     subscribe,
-    setUser(userId) {
+    async setUser(userId, idToken = null) {
       if (userId === _userId) return;
       _userId = userId;
-      set(load());
+      _idToken = idToken;
+
+      if (isSupabaseConfigured() && userId) {
+        set([]);
+        set(await loadFromSupabase());
+      } else {
+        set(load());
+      }
     },
     add(appliance) {
-      update(list => persist([...list, { ...appliance, id: crypto.randomUUID() }]));
+      const newItem = { ...appliance, id: crypto.randomUUID() };
+      update(list => {
+        const next = [...list, newItem];
+        if (isSupabaseConfigured() && _userId) {
+          getSupabase().from('appliances').insert(toRow(newItem))
+            .then(({ error }) => { if (error) console.error('Supabase insert error:', error); });
+        } else {
+          persist(next);
+        }
+        return next;
+      });
     },
     edit(id, data) {
-      update(list => persist(list.map(a => a.id === id ? { ...a, ...data } : a)));
+      update(list => {
+        const next = list.map(a => a.id === id ? { ...a, ...data } : a);
+        if (isSupabaseConfigured() && _userId) {
+          const updated = next.find(a => a.id === id);
+          getSupabase().from('appliances').update(toRow(updated)).eq('id', id)
+            .then(({ error }) => { if (error) console.error('Supabase update error:', error); });
+        } else {
+          persist(next);
+        }
+        return next;
+      });
     },
     remove(id) {
-      update(list => persist(list.filter(a => a.id !== id)));
+      update(list => {
+        const next = list.filter(a => a.id !== id);
+        if (isSupabaseConfigured() && _userId) {
+          getSupabase().from('appliances').delete().eq('id', id)
+            .then(({ error }) => { if (error) console.error('Supabase delete error:', error); });
+        } else {
+          persist(next);
+        }
+        return next;
+      });
     }
   };
 }

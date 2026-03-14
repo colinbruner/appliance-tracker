@@ -35,6 +35,8 @@ jobs:
         env:
           VITE_OIDC_AUTHORITY: ${{ secrets.OIDC_AUTHORITY }}
           VITE_OIDC_CLIENT_ID: ${{ secrets.OIDC_CLIENT_ID }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Authenticate to GCP
