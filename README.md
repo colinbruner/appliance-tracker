@@ -46,3 +46,4 @@ Pushes to `main` trigger the GitHub Actions workflow (`.github/workflows/ci.yml`
 ### GCS bucket configuration
 
 The bucket must be configured for static website hosting with `index.html` set as both the main page and the 404 page. The 404 page setting is required to support SPA client-side routing (all unknown paths fall back to `index.html`).
+
