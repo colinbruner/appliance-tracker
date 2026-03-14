@@ -19,7 +19,7 @@
   });
 
   // Set user namespace whenever currentUser changes
-  $: applianceStore.setUser($currentUser?.profile?.sub ?? null);
+  $: applianceStore.setUser($currentUser?.profile?.sub ?? null, $currentUser?.id_token ?? null);
 
   $: appliances = $applianceStore;
 
