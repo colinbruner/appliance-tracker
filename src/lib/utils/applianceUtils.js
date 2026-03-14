@@ -60,7 +60,8 @@ export function formatCurrency(amount) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    maximumFractionDigits: 0
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
   }).format(amount);
 }
 
