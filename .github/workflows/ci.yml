@@ -31,6 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Write version file
+        run: |
+          echo '{
+            "commit": "${{ github.sha }}",
+            "ref": "${{ github.ref_name }}",
+            "built_at": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+          }' > static/version.json
+
       - name: Build
         env:
           VITE_OIDC_AUTHORITY: ${{ secrets.OIDC_AUTHORITY }}

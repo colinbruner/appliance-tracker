@@ -27,6 +27,9 @@ pnpm-lock.yaml
 *.sublime-workspace
 .vscode/
 
+# Generated at build time
+static/version.json
+
 # Other temporary files
 test-results/
 _tmp_flaky_test_output.txt
