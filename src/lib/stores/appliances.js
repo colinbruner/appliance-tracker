@@ -170,7 +170,7 @@ async function loadFromSupabase() {
 // --- Store ---
 
 function createStore() {
-  const { subscribe, set, update } = writable([]);
+  const { subscribe, set, update } = writable(browser ? load() : []);
 
   return {
     subscribe,
