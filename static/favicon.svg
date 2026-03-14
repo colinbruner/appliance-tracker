@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded background -->
+  <rect width="32" height="32" rx="6" fill="url(#bg)"/>
+
+  <!-- House roof -->
+  <polygon points="16,4 28,15 4,15" fill="white"/>
+
+  <!-- House walls -->
+  <rect x="5" y="14" width="22" height="14" rx="1" fill="white"/>
+
+  <!-- Electrical plug: left prong -->
+  <rect x="12" y="16" width="2.5" height="5.5" rx="1.2" fill="#5b21b6"/>
+
+  <!-- Electrical plug: right prong -->
+  <rect x="17.5" y="16" width="2.5" height="5.5" rx="1.2" fill="#5b21b6"/>
+
+  <!-- Electrical plug: body (arc/D-shape) -->
+  <path d="M11.5,22 Q11.5,28 16,28 Q20.5,28 20.5,22 Z" fill="#5b21b6"/>
+</svg>
