@@ -110,9 +110,10 @@ function load() {
   if (!browser) return [];
   try {
     const raw = localStorage.getItem(storageKey());
-    return raw ? JSON.parse(raw) : SAMPLE_APPLIANCES;
+    if (raw) return JSON.parse(raw);
+    return _userId ? [] : SAMPLE_APPLIANCES;
   } catch {
-    return SAMPLE_APPLIANCES;
+    return _userId ? [] : SAMPLE_APPLIANCES;
   }
 }
 
