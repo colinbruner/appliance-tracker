@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { getApplianceStatus, STATUS_META } from '$lib/utils/applianceUtils.js';
 
   /** @type {any[]} */
@@ -168,8 +168,10 @@
     };
   }
 
-  function renderChart(list) {
-    if (!ChartConstructor || !canvas) return;
+  async function renderChart(list) {
+    if (!ChartConstructor) return;
+    await tick();
+    if (!canvas) return;
     chart?.destroy();
     chart = null;
     if (list.length > 0) {
