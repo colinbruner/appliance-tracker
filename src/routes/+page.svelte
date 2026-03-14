@@ -13,6 +13,7 @@
   let showForm = false;
   let editingAppliance = null;
   let focusReplacement = false;
+  let viewDemo = false;
 
   onMount(() => {
     initAuth();
@@ -79,7 +80,7 @@
     <div class="spinner"></div>
   </div>
 
-{:else if isOidcConfigured() && !$currentUser}
+{:else if isOidcConfigured() && !$currentUser && !viewDemo}
   <!-- Login page -->
   <div class="login-page">
     <div class="login-theme-corner">
@@ -107,6 +108,7 @@
       </ul>
 
       <button class="login-btn" on:click={login}>Sign In</button>
+      <button class="demo-btn" on:click={() => viewDemo = true}>View Demo</button>
     </div>
   </div>
 
@@ -289,6 +291,16 @@
     width: 100%;
   }
   .login-btn:hover { background: var(--primary-hover); }
+  .demo-btn {
+    background: none;
+    color: var(--text-3);
+    border: none;
+    font-size: 0.825rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0;
+  }
+  .demo-btn:hover { color: var(--text-2); }
 
   /* App layout */
   .app {

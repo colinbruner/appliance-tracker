@@ -116,7 +116,7 @@
           </label>
           <label class="field">
             <span>Purchase Price ($)</span>
-            <input type="number" bind:value={purchasePrice} placeholder="0" min="0" step="1" />
+            <input type="number" bind:value={purchasePrice} placeholder="0.00" min="0" step="0.01" />
           </label>
         </div>
 
@@ -158,7 +158,7 @@
           <div class="row">
             <label class="field">
               <span>Estimated Cost ($)</span>
-              <input type="number" bind:value={planCost} placeholder="0" min="0" step="1" />
+              <input type="number" bind:value={planCost} placeholder="0.00" min="0" step="0.01" />
             </label>
             <label class="field">
               <span>Store / URL</span>
