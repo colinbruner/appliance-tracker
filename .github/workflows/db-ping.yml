@@ -1,0 +1,17 @@
+name: Supabase DB Ping
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Ping Supabase
+        run: |
+          response=$(curl -sf \
+            -H "x-ping-secret: ${{ secrets.PING_SECRET }}" \
+            "${{ secrets.SUPABASE_FUNCTIONS_URL }}/ping")
+          echo "Response: $response"
