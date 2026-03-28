@@ -62,6 +62,7 @@ Guided onboarding flow:
 - Storage: Supabase Storage bucket ("item-photos"), RLS per user
 - Compression: Client-side via canvas API, 1200px max dimension, JPEG 80% quality (~200KB/photo)
 - Limits: Max 5MB upload, max 20 photos per item
+- EXIF strip: all photos run through exifr (or similar) before upload to remove GPS coordinates and device metadata. Privacy requirement, especially for public product.
 - UX: Upload progress bar, compression spinner, "Photo saved" toast
 
 #### Responsive Design
@@ -128,6 +129,7 @@ Rename from "Appliance Tracker" to a broader name (HomeBase, HomeLog, HomeTrack,
 
 - [x] **Create DESIGN.md** — /design-consultation completed 2026-03-27. Warm Utility direction, Instrument Serif + DM Sans, sage green primary, earth-tone categories.
 - [x] **Run /plan-eng-review** — completed 2026-03-27. Architecture, schema, test coverage, failure modes all reviewed. Eng decisions documented above.
+- [x] **Run /plan-ceo-review** — completed 2026-03-28. Selective expansion mode. 3 cherry-picks accepted (bulk quick-add, cost summary, PDF export). 7 items deferred. Outside voice identified auth strategy gap (Pocket ID vs public auth). 5 critical edge case gaps documented.
 - [ ] **Upgrade SvelteKit 1 → 2 + Svelte 4 → 5** — building v2 on deprecated framework versions creates compounding tech debt. App is 2500 LOC, upgrade cost is low now. **Must be first step.** Depends on: nothing.
 - [ ] **Set up Vitest test infrastructure** — zero tests exist. Add vitest, @testing-library/svelte, jsdom. Create test directory, vitest.config. Write tests for existing v1 utils (getApplianceStatus, formatters). Depends on: SvelteKit upgrade.
 - [ ] **Verify Supabase Storage RLS with Pocket ID JWTs** — Storage uses auth.uid() for RLS, current auth uses Pocket ID OIDC tokens via accessToken. Need to verify Storage recognizes these tokens. If not, photo architecture must change. Quick spike: create test bucket, try upload. **Blocks photo system implementation.** Depends on: nothing, can do in parallel.
@@ -135,6 +137,9 @@ Rename from "Appliance Tracker" to a broader name (HomeBase, HomeLog, HomeTrack,
 - [ ] **Choose app name + acquire domain** — research domain availability for candidate names, register. Can happen in parallel with development.
 - [ ] **Write v2 Supabase migration** — new `items` (with `updated_at` + auto-update trigger), `item_photos`, `maintenance_log` tables + data migration from `appliances` (category='appliances'). Schema finalized in eng review above.
 - [ ] **Set up Supabase Storage** — create "item-photos" bucket, RLS policies (user_id folder scoping), max 5MB file size. Depends on: Storage RLS verification above.
+- [ ] **Bulk quick-add** — after saving a new item, show "Add another?" with same category and type pre-filled from the item just saved. Reduces friction for power-entry sessions. Ships in R2. Depends on: item form implementation.
+- [ ] **Cost summary by category** — per-category cost breakdown (purchase price) on dashboard stats section. Ships in R2. Depends on: items store with category field.
+- [ ] **Export to PDF** — one-page home report with items, status, dates, thumbnail photos. Uses pdf-lib (pure JS, no server). Photos embedded as base64 from Supabase Storage signed URLs. Max 1 thumbnail per item. Fallback: photo column omitted if no photos exist. Ships in R4 after maintenance log. Depends on: items store, photo system (R3).
 
 ### NOT in scope (v2.0.0)
 
@@ -147,6 +152,8 @@ Rename from "Appliance Tracker" to a broader name (HomeBase, HomeLog, HomeTrack,
 - **Separate replacement_plans table** — JSONB on items row is sufficient for 1:1 data.
 - **Before/after photo tagging for projects** — deferred. Photos upload to the same gallery; manual ordering is enough.
 - **HEIC format handling** — iOS Safari converts HEIC to JPEG on canvas draw. If this causes issues, add a conversion library in a patch.
+- **Custom item types** — let users add types beyond the 30 built-in ones (solar panels, wine cellar, pool equipment). Schema addition + UI in add-item form. Deferred from CEO review cherry-pick (2026-03-28).
+- **Auth migration to public auth provider** — Pocket ID is self-hosted OIDC, works for personal/family use. Public product would need Supabase Auth, Auth0, or Clerk for social login (Google/GitHub). Deferred until domain/public decision is final. Outside voice flagged this as the biggest strategic gap (2026-03-28).
 
 ### What already exists (reusable in v2)
 
@@ -211,6 +218,24 @@ EXECUTION ORDER:
 
 **Critical gaps addressed:** canvas compression try/catch (added to plan), token refresh infrastructure (added as TODO).
 
+**CEO review edge cases (2026-03-28):**
+- Double-click submit prevention: disable form submit button after first click, re-enable on response
+- 0-byte file upload check: validate `file.size > 0` before compression
+- Maintenance log future date: validate `date <= today`
+- Delete item cascades Storage photos: when deleting an item, also delete its photos from Supabase Storage bucket
+- PDF generation memory cap: cap at 50 items per page, try/catch around pdf-lib generation with toast fallback
+- Storage bucket missing: catch StorageError specifically, toast "Photo upload unavailable"
+- Silent renew iframe blocked: configure popup fallback for browsers that block third-party iframes
+
+### v2.5+ Candidates (from CEO review, 2026-03-28)
+
+- **Custom item types** — let users create item types beyond the 30 built-in ones with name + optional lifespan. Turns HomeBase from "our categories" into "your home."
+- **Sentry error reporting** — free tier covers 5K errors/month. Add when custom domain ships and real users arrive.
+- **Import from receipt/photo** — when adding an item, snap a photo of the receipt/label. Auto-attach photo, pre-fill purchase date with today. 30min win.
+- **URL preview for replacement plan links** — fetch page title from store URL and show as a link label instead of raw URL. Small polish, feels premium.
+- **Seasonal awareness on dashboard** — "Needs Attention" section notes seasonality: "Furnace filter, fall is coming." Requires `season_relevance` field on item types.
+- **Auth migration for public product** — if going public, migrate from Pocket ID (self-hosted OIDC) to Supabase Auth or similar for social login support. Strategic decision that determines user model.
+
 ## v3.0.0+ (Deferred)
 
 - **Recurring task scheduling** — "mow lawn every 2 weeks", "change HVAC filter every 3 months" (different UX pattern, calendar, not timeline)
@@ -223,3 +248,15 @@ EXECUTION ORDER:
 ## Infrastructure
 
 - **Terraform** — codify Supabase project provisioning and Pocket ID third-party auth configuration
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR | 4 proposals, 3 accepted, 1 deferred. Mode: SELECTIVE EXPANSION. 5 critical edge case gaps documented. |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR (PLAN) | 15 issues, 0 critical gaps. Architecture, schema, tests, performance reviewed. |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | ISSUES (FULL) | score: ?/10 -> 8/10, 12 decisions made. |
+
+- **UNRESOLVED:** 0 across all reviews
+- **VERDICT:** CEO + ENG CLEARED — ready to implement. Design review may be stale (1 commit since review).
