@@ -10,21 +10,22 @@
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   import AuthButton from '$lib/components/AuthButton.svelte';
 
-  let showForm = false;
-  let editingAppliance = null;
-  let focusReplacement = false;
-  let viewDemo = false;
+  let showForm = $state(false);
+  let editingAppliance = $state(null);
+  let focusReplacement = $state(false);
+  let viewDemo = $state(false);
 
   onMount(() => {
     initAuth();
   });
 
-  // Set user namespace whenever currentUser changes
-  $: applianceStore.setUser($currentUser?.profile?.sub ?? null, $currentUser?.id_token ?? null);
+  $effect(() => {
+    applianceStore.setUser($currentUser?.profile?.sub ?? null, $currentUser?.id_token ?? null);
+  });
 
-  $: appliances = $applianceStore;
+  let appliances = $derived($applianceStore);
 
-  $: stats = (() => {
+  let stats = $derived((() => {
     const statuses = appliances.map(a => getApplianceStatus(a));
     const overdue  = statuses.filter(s => s.status === 'overdue').length;
     const critical = statuses.filter(s => s.status === 'critical').length;
@@ -34,7 +35,7 @@
       return sum + (a.replacementPlan?.estimatedCost ?? 0);
     }, 0);
     return { total: appliances.length, overdue, critical, warning, good, totalReplacementCost };
-  })();
+  })());
 
   function openAdd() {
     editingAppliance = null;
@@ -49,8 +50,7 @@
     showForm = true;
   }
 
-  function handleSave(event) {
-    const data = event.detail;
+  function handleSave(data) {
     if (editingAppliance) {
       applianceStore.edit(editingAppliance.id, data);
     } else {
@@ -59,8 +59,8 @@
     closeForm();
   }
 
-  function handleDelete(event) {
-    applianceStore.remove(event.detail);
+  function handleDelete(id) {
+    applianceStore.remove(id);
   }
 
   function closeForm() {
@@ -107,8 +107,8 @@
         </li>
       </ul>
 
-      <button class="login-btn" on:click={login}>Sign In</button>
-      <button class="demo-btn" on:click={() => viewDemo = true}>View Demo</button>
+      <button class="login-btn" onclick={login}>Sign In</button>
+      <button class="demo-btn" onclick={() => viewDemo = true}>View Demo</button>
     </div>
   </div>
 
@@ -122,7 +122,7 @@
           <p>Monitor, plan, budget</p>
         </div>
         <div class="header-actions">
-          <button class="btn-add" on:click={openAdd}>+ Add Appliance</button>
+          <button class="btn-add" onclick={openAdd}>+ Add Appliance</button>
           <ThemeToggle />
           <AuthButton />
         </div>
@@ -167,21 +167,21 @@
       <section class="card-section">
         <div class="section-heading-row">
           <h2 class="section-heading">Your Appliances</h2>
-          <button class="btn-add-sm" on:click={openAdd}>+ Add</button>
+          <button class="btn-add-sm" onclick={openAdd}>+ Add</button>
         </div>
 
         {#if appliances.length === 0}
           <div class="empty-state">
             <p>No appliances yet.</p>
-            <button class="btn-primary" on:click={openAdd}>Add your first appliance</button>
+            <button class="btn-primary" onclick={openAdd}>Add your first appliance</button>
           </div>
         {:else}
           <div class="cards-grid">
             {#each appliances as appliance (appliance.id)}
               <ApplianceCard
                 {appliance}
-                on:edit={(e) => openEdit(e.detail)}
-                on:delete={handleDelete}
+                onedit={openEdit}
+                ondelete={handleDelete}
               />
             {/each}
           </div>
@@ -194,8 +194,8 @@
     <ApplianceForm
       appliance={editingAppliance}
       {focusReplacement}
-      on:save={handleSave}
-      on:cancel={closeForm}
+      onsave={handleSave}
+      oncancel={closeForm}
     />
   {/if}
 {/if}

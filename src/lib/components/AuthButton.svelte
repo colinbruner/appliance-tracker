@@ -1,19 +1,19 @@
 <script>
   import { currentUser, authLoading, login, logout, isOidcConfigured } from '$lib/stores/auth.js';
 
-  let dropdownOpen = false;
+  let dropdownOpen = $state(false);
 
   function getInitials(user) {
     const name = user.profile?.name || user.profile?.email || '?';
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
-  function handleClickOutside(e) {
+  function handleClickOutside() {
     if (dropdownOpen) dropdownOpen = false;
   }
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 {#if $authLoading}
   <div class="loading-dot"></div>
@@ -21,7 +21,7 @@
   <span class="demo-badge">Demo Mode</span>
 {:else if $currentUser}
   <div class="user-wrap">
-    <button class="avatar-btn" on:click|stopPropagation={() => dropdownOpen = !dropdownOpen}>
+    <button class="avatar-btn" onclick={(e) => { e.stopPropagation(); dropdownOpen = !dropdownOpen; }}>
       {#if $currentUser.profile?.picture}
         <img class="avatar" src={$currentUser.profile.picture} alt="avatar" />
       {:else}
@@ -32,8 +32,8 @@
     </button>
 
     {#if dropdownOpen}
-      <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-      <div class="dropdown" on:click|stopPropagation>
+      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+      <div class="dropdown" onclick={(e) => e.stopPropagation()}>
         <div class="dropdown-user">
           <p class="dropdown-name">{$currentUser.profile?.name || 'User'}</p>
           {#if $currentUser.profile?.email}
@@ -41,14 +41,14 @@
           {/if}
         </div>
         <hr class="dropdown-divider" />
-        <button class="dropdown-item danger" on:click={() => { dropdownOpen = false; logout(); }}>
+        <button class="dropdown-item danger" onclick={() => { dropdownOpen = false; logout(); }}>
           Sign Out
         </button>
       </div>
     {/if}
   </div>
 {:else}
-  <button class="sign-in-btn" on:click={login}>Sign In</button>
+  <button class="sign-in-btn" onclick={login}>Sign In</button>
 {/if}
 
 <style>

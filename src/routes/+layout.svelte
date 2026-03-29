@@ -2,16 +2,20 @@
   import { onMount } from 'svelte';
   import { themeStore } from '$lib/stores/theme.js';
 
+  let { children } = $props();
+
   onMount(() => {
     themeStore.init();
   });
 
-  $: if (typeof document !== 'undefined') {
-    document.documentElement.dataset.theme = $themeStore;
-  }
+  $effect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = $themeStore;
+    }
+  });
 </script>
 
-<slot />
+{@render children()}
 
 <style>
   :global(:root) {
