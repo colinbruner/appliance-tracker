@@ -2,7 +2,7 @@
   import { themeStore } from '$lib/stores/theme.js';
 </script>
 
-<button class="toggle" on:click={themeStore.toggle} title="Toggle theme">
+<button class="toggle" onclick={themeStore.toggle} title="Toggle theme">
   {#if $themeStore === 'dark'}
     <span class="icon">&#9728;</span> Light
   {:else}

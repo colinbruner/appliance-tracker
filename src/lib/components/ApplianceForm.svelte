@@ -1,34 +1,31 @@
 <script>
-  import { createEventDispatcher, tick } from 'svelte';
+  import { tick } from 'svelte';
   import { APPLIANCE_TYPES } from '$lib/data/applianceTypes.js';
 
-  /** @type {any|null} Null = new appliance, object = editing */
-  export let appliance = null;
-  /** If true, replacement plan section is open by default */
-  export let focusReplacement = false;
+  /** @type {{ appliance?: any, focusReplacement?: boolean, onsave: (data: any) => void, oncancel: () => void }} */
+  let { appliance = null, focusReplacement = false, onsave, oncancel } = $props();
 
-  const dispatch = createEventDispatcher();
   const today = new Date().toISOString().split('T')[0];
 
   // --- Form state ---
-  let type = appliance?.type ?? '';
-  let name = appliance?.name ?? '';
-  let brand = appliance?.brand ?? '';
-  let model = appliance?.model ?? '';
-  let purchaseDate = appliance?.purchaseDate ?? today;
-  let purchasePrice = appliance?.purchasePrice ?? '';
-  let expectedLifespan = appliance?.expectedLifespan ?? 10;
-  let notes = appliance?.notes ?? '';
+  let type = $state(appliance?.type ?? '');
+  let name = $state(appliance?.name ?? '');
+  let brand = $state(appliance?.brand ?? '');
+  let model = $state(appliance?.model ?? '');
+  let purchaseDate = $state(appliance?.purchaseDate ?? today);
+  let purchasePrice = $state(appliance?.purchasePrice ?? '');
+  let expectedLifespan = $state(appliance?.expectedLifespan ?? 10);
+  let notes = $state(appliance?.notes ?? '');
 
   // Replacement plan
-  let planEnabled = focusReplacement || !!appliance?.replacementPlan;
-  let planBrand = appliance?.replacementPlan?.brand ?? '';
-  let planModel = appliance?.replacementPlan?.model ?? '';
-  let planCost = appliance?.replacementPlan?.estimatedCost ?? '';
-  let planUrl = appliance?.replacementPlan?.storeUrl ?? '';
-  let planNotes = appliance?.replacementPlan?.notes ?? '';
+  let planEnabled = $state(focusReplacement || !!appliance?.replacementPlan);
+  let planBrand = $state(appliance?.replacementPlan?.brand ?? '');
+  let planModel = $state(appliance?.replacementPlan?.model ?? '');
+  let planCost = $state(appliance?.replacementPlan?.estimatedCost ?? '');
+  let planUrl = $state(appliance?.replacementPlan?.storeUrl ?? '');
+  let planNotes = $state(appliance?.replacementPlan?.notes ?? '');
 
-  let planSection;
+  let planSection = $state(null);
 
   function handleTypeChange() {
     const found = APPLIANCE_TYPES.find(t => t.type === type);
@@ -64,20 +61,20 @@
         notes: planNotes.trim()
       } : null
     };
-    dispatch('save', result);
+    onsave(result);
   }
 </script>
 
 <div class="overlay" role="dialog" aria-modal="true">
-  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-  <div class="backdrop" on:click={() => dispatch('cancel')}></div>
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div class="backdrop" onclick={oncancel}></div>
   <div class="modal">
     <div class="modal-header">
       <h2>{appliance ? 'Edit Appliance' : 'Add Appliance'}</h2>
-      <button class="close" on:click={() => dispatch('cancel')} aria-label="Close">&#x2715;</button>
+      <button class="close" onclick={oncancel} aria-label="Close">&#x2715;</button>
     </div>
 
-    <form on:submit|preventDefault={handleSubmit}>
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
       <!-- === Appliance Details === -->
       <section class="section">
         <h3 class="section-title">Appliance Details</h3>
@@ -85,7 +82,7 @@
         <div class="row">
           <label class="field">
             <span>Type <span class="req">*</span></span>
-            <select bind:value={type} on:change={handleTypeChange} required>
+            <select bind:value={type} onchange={handleTypeChange} required>
               <option value="">Select type...</option>
               {#each APPLIANCE_TYPES as t}
                 <option value={t.type}>{t.type}</option>
@@ -138,7 +135,7 @@
       <section class="section" bind:this={planSection}>
         <div class="section-title-row">
           <h3 class="section-title">Replacement Plan</h3>
-          <button type="button" class="toggle-btn" on:click={togglePlan}>
+          <button type="button" class="toggle-btn" onclick={togglePlan}>
             {planEnabled ? 'Remove Plan' : '+ Add Plan'}
           </button>
         </div>
@@ -174,7 +171,7 @@
       </section>
 
       <div class="actions">
-        <button type="button" class="btn-cancel" on:click={() => dispatch('cancel')}>Cancel</button>
+        <button type="button" class="btn-cancel" onclick={oncancel}>Cancel</button>
         <button type="submit" class="btn-save">
           {appliance ? 'Save Changes' : 'Add Appliance'}
         </button>

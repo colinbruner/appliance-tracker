@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import {
     getApplianceStatus,
     STATUS_META,
@@ -8,17 +7,15 @@
     formatDate
   } from '$lib/utils/applianceUtils.js';
 
-  /** @type {any} */
-  export let appliance;
+  /** @type {{ appliance: any, onedit: (detail: { appliance: any, focusReplacement: boolean }) => void, ondelete: (id: any) => void }} */
+  let { appliance, onedit, ondelete } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  $: info = getApplianceStatus(appliance);
-  $: meta = STATUS_META[info.status];
+  let info = $derived(getApplianceStatus(appliance));
+  let meta = $derived(STATUS_META[info.status]);
 
   function confirmDelete() {
     if (confirm(`Remove "${appliance.name || appliance.type}"?`)) {
-      dispatch('delete', appliance.id);
+      ondelete(appliance.id);
     }
   }
 </script>
@@ -89,13 +86,13 @@
   {/if}
 
   <footer class="card-footer">
-    <button class="btn-sm" on:click={() => dispatch('edit', { appliance, focusReplacement: false })}>
+    <button class="btn-sm" onclick={() => onedit({ appliance, focusReplacement: false })}>
       Edit
     </button>
-    <button class="btn-sm btn-plan" on:click={() => dispatch('edit', { appliance, focusReplacement: true })}>
+    <button class="btn-sm btn-plan" onclick={() => onedit({ appliance, focusReplacement: true })}>
       {appliance.replacementPlan ? 'Update Plan' : 'Add Plan'}
     </button>
-    <button class="btn-sm btn-danger" on:click={confirmDelete}>Remove</button>
+    <button class="btn-sm btn-danger" onclick={confirmDelete}>Remove</button>
   </footer>
 </article>
 
