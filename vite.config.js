@@ -2,5 +2,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [sveltekit()]
+  plugins: [sveltekit()],
+  test: {
+    globals: true,
+    environment: 'node',
+    alias: {
+      '$app/environment': new URL('./src/test/mocks/app-environment.js', import.meta.url).pathname
+    }
+  }
 });
