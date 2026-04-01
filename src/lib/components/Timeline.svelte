@@ -50,12 +50,12 @@
     const minYear = Math.floor(Math.min(...allValues, currentYearDecimal)) - 0.5;
     const maxYear = Math.ceil(Math.max(...allValues, currentYearDecimal)) + 1.5;
 
-    // Theme-dependent colors
-    const gridColor     = isDark ? '#334155'                : '#e2e8f0';
-    const tickColor     = isDark ? '#94a3b8'                : '#64748b';
-    const todayLine     = isDark ? 'rgba(241,245,249,0.65)' : 'rgba(30,41,59,0.65)';
-    const labelBg       = isDark ? 'rgba(241,245,249,0.9)'  : 'rgba(30,41,59,0.85)';
-    const labelText     = isDark ? '#0f172a'                : '#ffffff';
+    // Theme-dependent colors (aligned with DESIGN.md warm palette)
+    const gridColor     = isDark ? '#3D3A36'                : '#E8E2D9';
+    const tickColor     = isDark ? '#9C9590'                : '#6B6560';
+    const todayLine     = isDark ? 'rgba(240,237,232,0.65)' : 'rgba(45,42,38,0.65)';
+    const labelBg       = isDark ? 'rgba(240,237,232,0.9)'  : 'rgba(45,42,38,0.85)';
+    const labelText     = isDark ? '#1C1A17'                : '#FAF8F5';
 
     /** Custom plugin: draws a dashed "Today" vertical line */
     const todayLinePlugin = {

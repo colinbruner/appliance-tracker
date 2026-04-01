@@ -1,10 +1,10 @@
 /** @typedef {'good'|'warning'|'critical'|'overdue'} ApplianceStatus */
 
 export const STATUS_META = {
-  good:     { label: 'Good',         bar: '#22c55e' },
-  warning:  { label: 'Due Soon',     bar: '#f59e0b' },
-  critical: { label: 'Replace Soon', bar: '#f97316' },
-  overdue:  { label: 'Overdue',      bar: '#ef4444' },
+  good:     { label: 'Good',         bar: '#5A7C65', cssVar: '--status-good' },
+  warning:  { label: 'Due Soon',     bar: '#C4915C', cssVar: '--status-warning' },
+  critical: { label: 'Replace Soon', bar: '#C4735C', cssVar: '--status-critical' },
+  overdue:  { label: 'Overdue',      bar: '#B85C5C', cssVar: '--status-overdue' },
 };
 
 /**
@@ -13,7 +13,10 @@ export const STATUS_META = {
  */
 export function getApplianceStatus(appliance) {
   const now = new Date();
-  const purchase = new Date(appliance.purchaseDate);
+  // Parse as local date (YYYY-MM-DD strings are parsed as UTC by default,
+  // which shifts to the previous day in western timezones)
+  const [y, m, d] = appliance.purchaseDate.split('-').map(Number);
+  const purchase = new Date(y, m - 1, d);
 
   const ageMs = now - purchase;
   const ageYears = ageMs / (1000 * 60 * 60 * 24 * 365.25);
