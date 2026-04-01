@@ -99,7 +99,7 @@
 <style>
   .card {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     border-left: 4px solid var(--accent);
     padding: 1.125rem 1.25rem;
     display: flex;
@@ -244,6 +244,6 @@
   .btn-plan { color: var(--primary); border-color: var(--primary-border); }
   .btn-plan:hover { background: var(--primary-subtle); border-color: var(--primary); }
 
-  .btn-danger { margin-left: auto; color: #ef4444; border-color: #fecaca; }
-  .btn-danger:hover { background: rgba(239,68,68,0.08); border-color: #ef4444; }
+  .btn-danger { margin-left: auto; color: var(--semantic-error); border-color: rgba(184,92,92,0.3); }
+  .btn-danger:hover { background: rgba(184,92,92,0.08); border-color: var(--semantic-error); }
 </style>

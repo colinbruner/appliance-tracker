@@ -288,7 +288,7 @@
     color: var(--text-3);
   }
 
-  .req { color: #ef4444; }
+  .req { color: var(--semantic-error); }
 
   input, select, textarea {
     padding: 0.5rem 0.7rem;

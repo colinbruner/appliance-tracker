@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 const KEY = 'at-theme';
 
 function createTheme() {
-  const initial = browser ? (localStorage.getItem(KEY) ?? 'dark') : 'dark';
+  const initial = browser ? (localStorage.getItem(KEY) ?? 'light') : 'dark';
   const { subscribe, update } = writable(initial);
 
   return {
@@ -21,7 +21,7 @@ function createTheme() {
     },
     init() {
       if (browser) {
-        const saved = localStorage.getItem(KEY) ?? 'dark';
+        const saved = localStorage.getItem(KEY) ?? 'light';
         document.documentElement.dataset.theme = saved;
       }
     }

@@ -311,8 +311,8 @@
 
   /* Header */
   .header {
-    background: var(--header-bg);
-    color: #fff;
+    background: var(--primary);
+    color: #FAF8F5;
     padding: 1.5rem 0;
     box-shadow: var(--shadow-md);
   }
@@ -327,8 +327,9 @@
     flex-wrap: wrap;
   }
   .brand h1 {
+    font-family: var(--font-display);
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 400;
     letter-spacing: -0.01em;
   }
   .brand p {
@@ -362,7 +363,7 @@
   }
   .stat-card {
     background: var(--surface);
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 0.875rem 1.25rem;
     display: flex;
     flex-direction: column;
@@ -373,8 +374,9 @@
     transition: border-color 0.2s;
   }
   .stat-value {
+    font-family: var(--font-display);
     font-size: 1.625rem;
-    font-weight: 800;
+    font-weight: 400;
     color: var(--text-1);
     line-height: 1;
   }
@@ -385,18 +387,18 @@
     letter-spacing: 0.06em;
     color: var(--text-3);
   }
-  .stat-overdue.active  { border-color: #ef4444; }
-  .stat-overdue.active .stat-value { color: #ef4444; }
-  .stat-critical.active { border-color: #f97316; }
-  .stat-critical.active .stat-value { color: #f97316; }
-  .stat-warning.active  { border-color: #f59e0b; }
-  .stat-warning.active .stat-value { color: #f59e0b; }
+  .stat-overdue.active  { border-color: var(--status-overdue); }
+  .stat-overdue.active .stat-value { color: var(--status-overdue); }
+  .stat-critical.active { border-color: var(--status-critical); }
+  .stat-critical.active .stat-value { color: var(--status-critical); }
+  .stat-warning.active  { border-color: var(--status-warning); }
+  .stat-warning.active .stat-value { color: var(--status-warning); }
   .stat-cost .stat-value { color: var(--primary); font-size: 1.25rem; }
 
   /* Sections */
   .card-section {
     background: var(--surface);
-    border-radius: 14px;
+    border-radius: var(--radius-xl);
     padding: 1.375rem 1.5rem;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-dim);

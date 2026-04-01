@@ -137,8 +137,8 @@
     transition: background 0.12s;
   }
   .dropdown-item:hover { background: var(--surface-2); }
-  .dropdown-item.danger { color: #ef4444; }
-  .dropdown-item.danger:hover { background: rgba(239,68,68,0.08); }
+  .dropdown-item.danger { color: var(--semantic-error); }
+  .dropdown-item.danger:hover { background: rgba(184,92,92,0.08); }
 
   .sign-in-btn {
     background: rgba(255,255,255,0.15);
