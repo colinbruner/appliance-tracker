@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy, tick } from 'svelte';
-  import { getApplianceStatus, STATUS_META } from '$lib/utils/applianceUtils.js';
+  import { getItemStatus, STATUS_META } from '$lib/utils/itemUtils.js';
 
   /** @type {any[]} */
   export let appliances = [];
@@ -34,12 +34,12 @@
     });
 
     const bgColors = list.map(a => {
-      const { status } = getApplianceStatus(a);
+      const { status } = getItemStatus(a);
       return STATUS_META[status].bar + 'BB';
     });
 
     const borderColors = list.map(a => {
-      const { status } = getApplianceStatus(a);
+      const { status } = getItemStatus(a);
       return STATUS_META[status].bar;
     });
 
@@ -145,7 +145,7 @@
               label: (ctx) => {
                 const a = list[ctx.dataIndex];
                 if (!a) return '';
-                const { ageYears, remainingYears } = getApplianceStatus(a);
+                const { ageYears, remainingYears } = getItemStatus(a);
                 const lines = [
                   `  Type: ${a.type}`,
                   `  Age: ${ageYears.toFixed(1)} yrs`,

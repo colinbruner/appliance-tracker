@@ -1,358 +1,125 @@
 <script>
-  import { onMount } from 'svelte';
-  import { applianceStore } from '$lib/stores/appliances.js';
+  import { itemStore } from '$lib/stores/items.js';
   import { themeStore } from '$lib/stores/theme.js';
-  import { currentUser, authLoading, initAuth, login, isOidcConfigured } from '$lib/stores/auth.js';
-  import { getApplianceStatus, formatCurrency } from '$lib/utils/applianceUtils.js';
+  import { getItemStatus, formatCurrency } from '$lib/utils/itemUtils.js';
   import Timeline from '$lib/components/Timeline.svelte';
-  import ApplianceCard from '$lib/components/ApplianceCard.svelte';
-  import ApplianceForm from '$lib/components/ApplianceForm.svelte';
-  import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-  import AuthButton from '$lib/components/AuthButton.svelte';
 
-  let showForm = $state(false);
-  let editingAppliance = $state(null);
-  let focusReplacement = $state(false);
-  let viewDemo = $state(false);
-
-  onMount(() => {
-    initAuth();
-  });
-
-  $effect(() => {
-    applianceStore.setUser($currentUser?.profile?.sub ?? null, $currentUser?.id_token ?? null);
-  });
-
-  let appliances = $derived($applianceStore);
+  let items = $derived($itemStore);
 
   let stats = $derived((() => {
-    const statuses = appliances.map(a => getApplianceStatus(a));
-    const overdue  = statuses.filter(s => s.status === 'overdue').length;
-    const critical = statuses.filter(s => s.status === 'critical').length;
-    const warning  = statuses.filter(s => s.status === 'warning').length;
-    const good     = statuses.filter(s => s.status === 'good').length;
-    const totalReplacementCost = appliances.reduce((sum, a) => {
-      return sum + (a.replacementPlan?.estimatedCost ?? 0);
-    }, 0);
-    return { total: appliances.length, overdue, critical, warning, good, totalReplacementCost };
+    const statuses = items.map(a => ({ item: a, ...getItemStatus(a) }));
+    const needsAttention = statuses.filter(s => s.status === 'overdue' || s.status === 'critical');
+    const dueWithin1yr = statuses.filter(s => s.status === 'critical');
+    const totalInvested = items.reduce((sum, a) => sum + (a.purchasePrice ?? 0), 0);
+    const totalPlanned = items.reduce((sum, a) => sum + (a.replacementPlan?.estimatedCost ?? 0), 0);
+    return {
+      total: items.length,
+      needsAttention: needsAttention.length,
+      dueWithin1yr: dueWithin1yr.length,
+      totalInvested,
+      totalPlanned,
+      attentionItems: needsAttention.sort((a, b) => a.remainingYears - b.remainingYears),
+    };
   })());
 
-  function openAdd() {
-    editingAppliance = null;
-    focusReplacement = false;
-    showForm = true;
-  }
-
-  /** @param {{ appliance: any, focusReplacement: boolean }} detail */
-  function openEdit({ appliance, focusReplacement: fr }) {
-    editingAppliance = appliance;
-    focusReplacement = fr;
-    showForm = true;
-  }
-
-  function handleSave(data) {
-    if (editingAppliance) {
-      applianceStore.edit(editingAppliance.id, data);
-    } else {
-      applianceStore.add(data);
-    }
-    closeForm();
-  }
-
-  function handleDelete(id) {
-    applianceStore.remove(id);
-  }
-
-  function closeForm() {
-    showForm = false;
-    editingAppliance = null;
-    focusReplacement = false;
-  }
+  // Asset items for timeline (projects don't have lifespans)
+  let assetItems = $derived(items.filter(i => i.category !== 'projects'));
 </script>
 
 <svelte:head>
-  <title>Appliance Tracker</title>
+  <title>Dashboard — HomeBase</title>
 </svelte:head>
 
-{#if $authLoading}
-  <!-- Loading spinner -->
-  <div class="loading-page">
-    <div class="spinner"></div>
+<div class="dashboard">
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value">{stats.total}</span>
+      <span class="stat-label">Total Items</span>
+    </div>
+    <div class="stat-card stat-attention" class:active={stats.needsAttention > 0}>
+      <span class="stat-value">{stats.needsAttention}</span>
+      <span class="stat-label">Needs Attention</span>
+    </div>
+    <div class="stat-card stat-critical" class:active={stats.dueWithin1yr > 0}>
+      <span class="stat-value">{stats.dueWithin1yr}</span>
+      <span class="stat-label">Due Within 1 Yr</span>
+    </div>
+    {#if stats.totalInvested > 0}
+      <div class="stat-card stat-invested">
+        <span class="stat-value">{formatCurrency(stats.totalInvested)}</span>
+        <span class="stat-label">Total Invested</span>
+      </div>
+    {/if}
+    {#if stats.totalPlanned > 0}
+      <div class="stat-card stat-planned">
+        <span class="stat-value">{formatCurrency(stats.totalPlanned)}</span>
+        <span class="stat-label">Planned Costs</span>
+      </div>
+    {/if}
   </div>
 
-{:else if isOidcConfigured() && !$currentUser && !viewDemo}
-  <!-- Login page -->
-  <div class="login-page">
-    <div class="login-theme-corner">
-      <ThemeToggle />
-    </div>
-    <div class="login-card">
-      <div class="login-brand">
-        <h1 class="login-title">Appliance Tracker</h1>
-        <p class="login-sub">Monitor lifespans, plan replacements, budget ahead</p>
-      </div>
-
-      <ul class="feature-list">
-        <li>
-          <span class="feat-icon">&#9881;</span>
-          <span>Track appliance lifespans and get ahead of failures</span>
-        </li>
-        <li>
-          <span class="feat-icon">&#128197;</span>
-          <span>Plan replacements before appliances reach end-of-life</span>
-        </li>
-        <li>
-          <span class="feat-icon">&#128176;</span>
-          <span>Budget for future replacement costs in one place</span>
-        </li>
-      </ul>
-
-      <button class="login-btn" onclick={login}>Sign In</button>
-      <button class="demo-btn" onclick={() => viewDemo = true}>View Demo</button>
-    </div>
-  </div>
-
-{:else}
-  <!-- Main app -->
-  <div class="app">
-    <header class="header">
-      <div class="header-inner">
-        <div class="brand">
-          <h1>Appliance Tracker</h1>
-          <p>Monitor, plan, budget</p>
-        </div>
-        <div class="header-actions">
-          <button class="btn-add" onclick={openAdd}>+ Add Appliance</button>
-          <ThemeToggle />
-          <AuthButton />
-        </div>
-      </div>
-    </header>
-
-    <main class="main">
-      <!-- Stats row -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-value">{stats.total}</span>
-          <span class="stat-label">Total Appliances</span>
-        </div>
-        <div class="stat-card stat-overdue" class:active={stats.overdue > 0}>
-          <span class="stat-value">{stats.overdue}</span>
-          <span class="stat-label">Overdue</span>
-        </div>
-        <div class="stat-card stat-critical" class:active={stats.critical > 0}>
-          <span class="stat-value">{stats.critical}</span>
-          <span class="stat-label">Replace Soon</span>
-        </div>
-        <div class="stat-card stat-warning" class:active={stats.warning > 0}>
-          <span class="stat-value">{stats.warning}</span>
-          <span class="stat-label">Due Within 3 Yrs</span>
-        </div>
-        {#if stats.totalReplacementCost > 0}
-          <div class="stat-card stat-cost">
-            <span class="stat-value">{formatCurrency(stats.totalReplacementCost)}</span>
-            <span class="stat-label">Planned Replacement Cost</span>
-          </div>
+  <!-- Needs Attention -->
+  <section class="card-section">
+    <h2 class="section-heading">Needs Attention</h2>
+    {#if stats.attentionItems.length === 0}
+      <div class="all-clear">
+        <p class="all-clear-text">All {stats.total} items are in good shape.</p>
+        {#if assetItems.length > 0}
+          {@const nextUp = [...assetItems]
+            .map(i => ({ item: i, ...getItemStatus(i) }))
+            .filter(s => s.remainingYears != null && s.remainingYears > 0)
+            .sort((a, b) => a.remainingYears - b.remainingYears)[0]}
+          {#if nextUp}
+            <p class="next-up">
+              Next up: <a href="/items/{nextUp.item.id}">{nextUp.item.name || nextUp.item.type}</a>
+              — {nextUp.remainingYears < 1
+                ? `${Math.round(nextUp.remainingYears * 12)} months`
+                : `${nextUp.remainingYears.toFixed(1)} years`}
+            </p>
+          {/if}
         {/if}
       </div>
+    {:else}
+      <div class="attention-list">
+        {#each stats.attentionItems as entry}
+          <a href="/items/{entry.item.id}" class="attention-row">
+            <span class="attention-name">{entry.item.name || entry.item.type}</span>
+            <span class="attention-type">{entry.item.type}</span>
+            <span class="attention-status" class:overdue={entry.status === 'overdue'} class:critical={entry.status === 'critical'}>
+              {entry.status === 'overdue'
+                ? `${Math.abs(entry.remainingYears).toFixed(1)} yrs overdue`
+                : `${(entry.remainingYears * 12).toFixed(0)} mo left`}
+            </span>
+          </a>
+        {/each}
+      </div>
+    {/if}
+  </section>
 
-      <!-- Timeline -->
-      <section class="card-section">
-        <h2 class="section-heading">Lifespan Timeline</h2>
-        <p class="section-sub">Each bar spans from purchase date to expected end-of-life. Dashed line = today.</p>
-        <Timeline {appliances} isDark={$themeStore === 'dark'} />
-      </section>
-
-      <!-- Appliance cards -->
-      <section class="card-section">
-        <div class="section-heading-row">
-          <h2 class="section-heading">Your Appliances</h2>
-          <button class="btn-add-sm" onclick={openAdd}>+ Add</button>
-        </div>
-
-        {#if appliances.length === 0}
-          <div class="empty-state">
-            <p>No appliances yet.</p>
-            <button class="btn-primary" onclick={openAdd}>Add your first appliance</button>
-          </div>
-        {:else}
-          <div class="cards-grid">
-            {#each appliances as appliance (appliance.id)}
-              <ApplianceCard
-                {appliance}
-                onedit={openEdit}
-                ondelete={handleDelete}
-              />
-            {/each}
-          </div>
-        {/if}
-      </section>
-    </main>
-  </div>
-
-  {#if showForm}
-    <ApplianceForm
-      appliance={editingAppliance}
-      {focusReplacement}
-      onsave={handleSave}
-      oncancel={closeForm}
-    />
+  <!-- Timeline -->
+  {#if assetItems.length > 0}
+    <section class="card-section">
+      <h2 class="section-heading">Lifespan Timeline</h2>
+      <p class="section-sub">Each bar spans from purchase date to expected end-of-life. Dashed line = today.</p>
+      <Timeline appliances={assetItems} isDark={$themeStore === 'dark'} />
+    </section>
   {/if}
-{/if}
+
+  <!-- Empty state -->
+  {#if items.length === 0}
+    <div class="empty-state">
+      <p>No items tracked yet.</p>
+      <a href="/items/new" class="btn-primary">Add your first item</a>
+    </div>
+  {/if}
+</div>
 
 <style>
-  /* Loading */
-  .loading-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-  }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Login page */
-  .login-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    padding: 1.5rem;
-    position: relative;
-  }
-  .login-theme-corner {
-    position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-  }
-  .login-card {
-    background: var(--surface);
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    max-width: 400px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.75rem;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border);
-  }
-  .login-brand {
-    text-align: center;
-  }
-  .login-title {
-    font-size: 1.625rem;
-    font-weight: 800;
-    color: var(--text-1);
-    letter-spacing: -0.01em;
-  }
-  .login-sub {
-    font-size: 0.85rem;
-    color: var(--text-2);
-    margin-top: 0.4rem;
-  }
-  .feature-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    width: 100%;
-  }
-  .feature-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-    color: var(--text-2);
-  }
-  .feat-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-    margin-top: 0.05rem;
-  }
-  .login-btn {
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    padding: 0.7rem 2.25rem;
-    border-radius: 9px;
-    font-size: 0.925rem;
-    font-weight: 600;
-    transition: background 0.15s;
-    width: 100%;
-  }
-  .login-btn:hover { background: var(--primary-hover); }
-  .demo-btn {
-    background: none;
-    color: var(--text-3);
-    border: none;
-    font-size: 0.825rem;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    padding: 0;
-  }
-  .demo-btn:hover { color: var(--text-2); }
-
-  /* App layout */
-  .app {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Header */
-  .header {
-    background: var(--primary);
-    color: #FAF8F5;
-    padding: 1.5rem 0;
-    box-shadow: var(--shadow-md);
-  }
-  .header-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .brand h1 {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
-  .brand p {
-    font-size: 0.8rem;
-    opacity: 0.8;
-    margin-top: 0.2rem;
-  }
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    flex-wrap: wrap;
-  }
-
-  /* Main */
-  .main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1.75rem 1.5rem 3rem;
+  .dashboard {
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
-    width: 100%;
   }
 
   /* Stats */
@@ -387,13 +154,12 @@
     letter-spacing: 0.06em;
     color: var(--text-3);
   }
-  .stat-overdue.active  { border-color: var(--status-overdue); }
-  .stat-overdue.active .stat-value { color: var(--status-overdue); }
+  .stat-attention.active  { border-color: var(--status-overdue); }
+  .stat-attention.active .stat-value { color: var(--status-overdue); }
   .stat-critical.active { border-color: var(--status-critical); }
   .stat-critical.active .stat-value { color: var(--status-critical); }
-  .stat-warning.active  { border-color: var(--status-warning); }
-  .stat-warning.active .stat-value { color: var(--status-warning); }
-  .stat-cost .stat-value { color: var(--primary); font-size: 1.25rem; }
+  .stat-invested .stat-value { color: var(--primary); font-size: 1.25rem; }
+  .stat-planned .stat-value { color: var(--cat-appliances); font-size: 1.25rem; }
 
   /* Sections */
   .card-section {
@@ -407,68 +173,73 @@
     font-size: 1rem;
     font-weight: 700;
     color: var(--text-1);
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.75rem;
   }
   .section-sub {
     font-size: 0.78rem;
     color: var(--text-3);
+    margin-top: -0.5rem;
     margin-bottom: 1rem;
   }
-  .section-heading-row {
+
+  /* Needs Attention */
+  .all-clear { padding: 1.5rem 0 0.5rem; }
+  .all-clear-text {
+    font-size: 0.9rem;
+    color: var(--text-2);
+  }
+  .next-up {
+    font-size: 0.825rem;
+    color: var(--text-3);
+    margin-top: 0.35rem;
+  }
+  .next-up a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 550;
+  }
+  .next-up a:hover { text-decoration: underline; }
+
+  .attention-list {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+  }
+  .attention-row {
+    display: flex;
     align-items: center;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-dim);
+    text-decoration: none;
+    transition: background 0.12s;
+    border-radius: var(--radius-sm);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
-
-  /* Cards grid */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-
-  /* Buttons */
-  .btn-add {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    border: 1.5px solid rgba(255,255,255,0.5);
-    padding: 0.6rem 1.25rem;
-    border-radius: 8px;
+  .attention-row:last-child { border-bottom: none; }
+  .attention-row:hover { background: var(--surface-2); }
+  .attention-name {
     font-size: 0.875rem;
     font-weight: 600;
-    transition: background 0.15s;
+    color: var(--text-1);
+    flex: 1;
+  }
+  .attention-type {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .attention-status {
+    font-size: 0.75rem;
+    font-weight: 650;
     white-space: nowrap;
   }
-  .btn-add:hover { background: rgba(255,255,255,0.25); }
-
-  .btn-add-sm {
-    background: none;
-    border: 1px solid var(--primary-border);
-    color: var(--primary);
-    padding: 0.3rem 0.875rem;
-    border-radius: 7px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-  .btn-add-sm:hover { background: var(--primary-subtle); }
-
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    padding: 0.6rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition: background 0.15s;
-  }
-  .btn-primary:hover { background: var(--primary-hover); }
+  .attention-status.overdue { color: var(--status-overdue); }
+  .attention-status.critical { color: var(--status-critical); }
 
   /* Empty state */
   .empty-state {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 4rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -478,10 +249,16 @@
     color: var(--text-2);
     font-size: 0.9rem;
   }
-
-  @media (max-width: 600px) {
-    .header-inner { flex-direction: column; align-items: flex-start; }
-    .main { padding: 1rem 1rem 2rem; }
-    .cards-grid { grid-template-columns: 1fr; }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s;
   }
+  .btn-primary:hover { background: var(--primary-hover); }
 </style>

@@ -1,17 +1,27 @@
 <script>
   import { onMount } from 'svelte';
   import { themeStore } from '$lib/stores/theme.js';
+  import { itemStore } from '$lib/stores/items.js';
+  import { currentUser, authLoading, initAuth, login, isOidcConfigured } from '$lib/stores/auth.js';
+  import Nav from '$lib/components/Nav.svelte';
+  import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
   let { children } = $props();
+  let viewDemo = $state(false);
 
   onMount(() => {
     themeStore.init();
+    initAuth();
   });
 
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.dataset.theme = $themeStore;
     }
+  });
+
+  $effect(() => {
+    itemStore.setUser($currentUser?.profile?.sub ?? null, $currentUser?.id_token ?? null);
   });
 </script>
 
@@ -21,7 +31,50 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </svelte:head>
 
-{@render children()}
+{#if $authLoading}
+  <div class="loading-page">
+    <div class="spinner"></div>
+  </div>
+
+{:else if isOidcConfigured() && !$currentUser && !viewDemo}
+  <div class="login-page">
+    <div class="login-theme-corner">
+      <ThemeToggle />
+    </div>
+    <div class="login-card">
+      <div class="login-brand">
+        <h1 class="login-title">HomeBase</h1>
+        <p class="login-sub">Track your home. Plan ahead. Stay on top of it all.</p>
+      </div>
+
+      <ul class="feature-list">
+        <li>
+          <span class="feat-icon">&#9881;</span>
+          <span>Track lifespans for appliances, systems, and structure</span>
+        </li>
+        <li>
+          <span class="feat-icon">&#128197;</span>
+          <span>Plan replacements before things reach end-of-life</span>
+        </li>
+        <li>
+          <span class="feat-icon">&#128176;</span>
+          <span>Budget for future costs in one place</span>
+        </li>
+      </ul>
+
+      <button class="login-btn" onclick={login}>Sign In</button>
+      <button class="demo-btn" onclick={() => viewDemo = true}>View Demo</button>
+    </div>
+  </div>
+
+{:else}
+  <div class="app">
+    <Nav />
+    <main class="main-content">
+      {@render children()}
+    </main>
+  </div>
+{/if}
 
 <style>
   :global(:root) {
@@ -115,5 +168,114 @@
     :global(*) {
       transition-duration: 0ms !important;
     }
+  }
+
+  /* Loading */
+  .loading-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Login page */
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    padding: 1.5rem;
+    position: relative;
+  }
+  .login-theme-corner { position: absolute; top: 1.25rem; right: 1.25rem; }
+  .login-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 400px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .login-brand { text-align: center; }
+  .login-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--text-1);
+  }
+  .login-sub {
+    font-size: 0.85rem;
+    color: var(--text-2);
+    margin-top: 0.4rem;
+  }
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    width: 100%;
+  }
+  .feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+  .feat-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+  .login-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 0.7rem 2.25rem;
+    border-radius: 9px;
+    font-size: 0.925rem;
+    font-weight: 600;
+    transition: background 0.15s;
+    width: 100%;
+  }
+  .login-btn:hover { background: var(--primary-hover); }
+  .demo-btn {
+    background: none;
+    color: var(--text-3);
+    border: none;
+    font-size: 0.825rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0;
+  }
+  .demo-btn:hover { color: var(--text-2); }
+
+  /* App shell */
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.75rem 1.5rem 3rem;
+    width: 100%;
+    flex: 1;
+  }
+
+  @media (max-width: 600px) {
+    .main-content { padding: 1rem 1rem 2rem; }
   }
 </style>

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
-  getApplianceStatus,
+  getItemStatus,
   formatYearsRemaining,
   formatCurrency,
   formatDate,
   STATUS_META,
-} from './applianceUtils.js';
+} from './itemUtils.js';
 
 // Fix "now" to a known date so status thresholds are deterministic
 const NOW = new Date('2026-03-30T00:00:00Z');
@@ -23,29 +23,37 @@ afterEach(() => {
 // STATUS_META
 // ---------------------------------------------------------------------------
 describe('STATUS_META', () => {
-  it('has entries for all four statuses', () => {
+  it('has entries for all six statuses', () => {
     expect(STATUS_META).toHaveProperty('good');
     expect(STATUS_META).toHaveProperty('warning');
     expect(STATUS_META).toHaveProperty('critical');
     expect(STATUS_META).toHaveProperty('overdue');
+    expect(STATUS_META).toHaveProperty('active');
+    expect(STATUS_META).toHaveProperty('completed');
   });
 
   it('each entry has a label and a bar color', () => {
-    for (const key of ['good', 'warning', 'critical', 'overdue']) {
+    for (const key of Object.keys(STATUS_META)) {
       expect(typeof STATUS_META[key].label).toBe('string');
       expect(STATUS_META[key].label.length).toBeGreaterThan(0);
       expect(STATUS_META[key].bar).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });
+
+  it('each entry has a cssVar', () => {
+    for (const key of Object.keys(STATUS_META)) {
+      expect(STATUS_META[key].cssVar).toMatch(/^--status-/);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
-// getApplianceStatus
+// getItemStatus — asset lifecycle (appliances, structure, systems)
 // ---------------------------------------------------------------------------
-describe('getApplianceStatus', () => {
+describe('getItemStatus — asset lifecycle', () => {
   it('returns "good" when more than 3 years remain', () => {
-    // Purchased 2 years ago, lifespan 10 → ~8 years left
-    const { status, remainingYears, ageYears, percentUsed } = getApplianceStatus({
+    const { status, remainingYears, ageYears, percentUsed } = getItemStatus({
+      category: 'appliances',
       purchaseDate: '2024-03-30',
       expectedLifespan: 10,
     });
@@ -56,8 +64,8 @@ describe('getApplianceStatus', () => {
   });
 
   it('returns "warning" when between 1 and 3 years remain', () => {
-    // Purchased 8 years ago, lifespan 10 → ~2 years left
-    const { status } = getApplianceStatus({
+    const { status } = getItemStatus({
+      category: 'systems',
       purchaseDate: '2018-03-30',
       expectedLifespan: 10,
     });
@@ -65,8 +73,8 @@ describe('getApplianceStatus', () => {
   });
 
   it('returns "critical" when less than 1 year remains', () => {
-    // Purchased 9.5 years ago, lifespan 10 → ~0.5 years left
-    const { status } = getApplianceStatus({
+    const { status } = getItemStatus({
+      category: 'structure',
       purchaseDate: '2016-09-30',
       expectedLifespan: 10,
     });
@@ -74,8 +82,8 @@ describe('getApplianceStatus', () => {
   });
 
   it('returns "overdue" when past expected lifespan', () => {
-    // Purchased 12 years ago, lifespan 10 → ~2 years overdue
-    const { status, remainingYears } = getApplianceStatus({
+    const { status, remainingYears } = getItemStatus({
+      category: 'appliances',
       purchaseDate: '2014-03-30',
       expectedLifespan: 10,
     });
@@ -84,7 +92,8 @@ describe('getApplianceStatus', () => {
   });
 
   it('caps percentUsed at 100 when overdue', () => {
-    const { percentUsed } = getApplianceStatus({
+    const { percentUsed } = getItemStatus({
+      category: 'appliances',
       purchaseDate: '2010-01-01',
       expectedLifespan: 10,
     });
@@ -92,7 +101,8 @@ describe('getApplianceStatus', () => {
   });
 
   it('returns a valid eolDate', () => {
-    const { eolDate } = getApplianceStatus({
+    const { eolDate } = getItemStatus({
+      category: 'appliances',
       purchaseDate: '2020-01-01',
       expectedLifespan: 10,
     });
@@ -101,13 +111,51 @@ describe('getApplianceStatus', () => {
   });
 
   it('handles fractional lifespan (years + months)', () => {
-    // lifespan 10.5 → 10 years + 6 months from purchase
-    const { eolDate } = getApplianceStatus({
+    const { eolDate } = getItemStatus({
+      category: 'appliances',
       purchaseDate: '2020-01-01',
       expectedLifespan: 10.5,
     });
     expect(eolDate.getFullYear()).toBe(2030);
     expect(eolDate.getMonth()).toBe(6); // July (0-indexed)
+  });
+
+  it('defaults to asset lifecycle when category is missing', () => {
+    const { status } = getItemStatus({
+      purchaseDate: '2024-03-30',
+      expectedLifespan: 10,
+    });
+    expect(status).toBe('good');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getItemStatus — project lifecycle
+// ---------------------------------------------------------------------------
+describe('getItemStatus — project lifecycle', () => {
+  it('returns "active" for a project with no completion date', () => {
+    const result = getItemStatus({
+      category: 'projects',
+      purchaseDate: '2025-06-01',
+    });
+    expect(result.status).toBe('active');
+    expect(result.eolDate).toBeNull();
+    expect(result.remainingYears).toBeNull();
+    expect(result.percentUsed).toBeNull();
+    expect(result.ageYears).toBeGreaterThan(0);
+  });
+
+  it('returns "completed" for a project with a completion date', () => {
+    const result = getItemStatus({
+      category: 'projects',
+      purchaseDate: '2024-01-01',
+      completionDate: '2024-06-15',
+    });
+    expect(result.status).toBe('completed');
+    expect(result.percentUsed).toBe(100);
+    expect(result.remainingYears).toBe(0);
+    expect(result.eolDate).toBeInstanceOf(Date);
+    expect(result.ageYears).toBeCloseTo(0.45, 1);
   });
 });
 
@@ -161,7 +209,6 @@ describe('formatCurrency', () => {
 // ---------------------------------------------------------------------------
 describe('formatDate', () => {
   it('formats a date string into a human-readable form', () => {
-    // Result is locale-dependent but should contain the year
     const result = formatDate('2021-03-08');
     expect(result).toMatch(/2021/);
   });
