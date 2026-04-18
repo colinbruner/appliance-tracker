@@ -9,8 +9,20 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({})),
 }));
 
+// Mock the supabase module
+vi.mock('$lib/supabase.js', () => ({
+  getSupabase: vi.fn(() => ({})),
+  setIdToken: vi.fn(),
+  isSupabaseConfigured: vi.fn(() => false),
+}));
+
+// Mock sample items
+vi.mock('$lib/data/sampleItems.js', () => ({
+  SAMPLE_ITEMS: [],
+}));
+
 // Import store AFTER mocks are in place
-const { applianceStore } = await import('./appliances.js');
+const { itemStore } = await import('./items.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,15 +30,16 @@ const { applianceStore } = await import('./appliances.js');
 
 /** Read the current snapshot of the store. */
 function snapshot() {
-  return get(applianceStore);
+  return get(itemStore);
 }
 
-/** Remove every appliance currently in the store. */
+/** Remove every item currently in the store. */
 function clearStore() {
-  snapshot().forEach(a => applianceStore.remove(a.id));
+  snapshot().forEach(a => itemStore.remove(a.id));
 }
 
-const BASE_APPLIANCE = {
+const BASE_ITEM = {
+  category: 'appliances',
   type: 'Washer',
   name: 'Test Washer',
   brand: 'LG',
@@ -36,6 +49,8 @@ const BASE_APPLIANCE = {
   expectedLifespan: 11,
   notes: '',
   replacementPlan: null,
+  completionDate: null,
+  finalCost: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -46,15 +61,15 @@ beforeEach(() => {
   clearStore();
 });
 
-describe('applianceStore – initial state', () => {
+describe('itemStore — initial state', () => {
   it('starts empty in test (non-browser) mode', () => {
     expect(snapshot()).toHaveLength(0);
   });
 });
 
-describe('applianceStore – add', () => {
-  it('adds an appliance and generates a unique id', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
+describe('itemStore — add', () => {
+  it('adds an item and generates a unique id', () => {
+    itemStore.add({ ...BASE_ITEM });
     const items = snapshot();
     expect(items).toHaveLength(1);
     expect(typeof items[0].id).toBe('string');
@@ -62,56 +77,57 @@ describe('applianceStore – add', () => {
   });
 
   it('preserves all provided fields', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
+    itemStore.add({ ...BASE_ITEM });
     const item = snapshot()[0];
+    expect(item.category).toBe('appliances');
     expect(item.name).toBe('Test Washer');
     expect(item.brand).toBe('LG');
     expect(item.purchasePrice).toBe(800);
     expect(item.expectedLifespan).toBe(11);
   });
 
-  it('assigns a different id to each new appliance', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Second Washer' });
+  it('assigns a different id to each new item', () => {
+    itemStore.add({ ...BASE_ITEM });
+    itemStore.add({ ...BASE_ITEM, name: 'Second Washer' });
     const [a, b] = snapshot();
     expect(a.id).not.toBe(b.id);
   });
 
   it('appends without replacing existing entries', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Dryer' });
+    itemStore.add({ ...BASE_ITEM });
+    itemStore.add({ ...BASE_ITEM, name: 'Dryer' });
     expect(snapshot()).toHaveLength(2);
   });
 });
 
-describe('applianceStore – edit', () => {
-  it('updates the specified fields of the target appliance', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
+describe('itemStore — edit', () => {
+  it('updates the specified fields of the target item', () => {
+    itemStore.add({ ...BASE_ITEM });
     const { id } = snapshot()[0];
 
-    applianceStore.edit(id, { name: 'Updated Name', purchasePrice: 999 });
+    itemStore.edit(id, { name: 'Updated Name', purchasePrice: 999 });
 
     const item = snapshot().find(a => a.id === id);
     expect(item.name).toBe('Updated Name');
     expect(item.purchasePrice).toBe(999);
   });
 
-  it('does not mutate other appliances', () => {
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Washer A' });
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Washer B' });
+  it('does not mutate other items', () => {
+    itemStore.add({ ...BASE_ITEM, name: 'Washer A' });
+    itemStore.add({ ...BASE_ITEM, name: 'Washer B' });
     const [a, b] = snapshot();
 
-    applianceStore.edit(a.id, { name: 'Modified A' });
+    itemStore.edit(a.id, { name: 'Modified A' });
 
     const items = snapshot();
     expect(items.find(x => x.id === b.id).name).toBe('Washer B');
   });
 
   it('preserves fields that were not included in the update', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
+    itemStore.add({ ...BASE_ITEM });
     const { id } = snapshot()[0];
 
-    applianceStore.edit(id, { brand: 'Samsung' });
+    itemStore.edit(id, { brand: 'Samsung' });
 
     const item = snapshot().find(a => a.id === id);
     expect(item.brand).toBe('Samsung');
@@ -119,13 +135,13 @@ describe('applianceStore – edit', () => {
   });
 });
 
-describe('applianceStore – remove', () => {
-  it('removes only the appliance with the given id', () => {
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Washer A' });
-    applianceStore.add({ ...BASE_APPLIANCE, name: 'Washer B' });
+describe('itemStore — remove', () => {
+  it('removes only the item with the given id', () => {
+    itemStore.add({ ...BASE_ITEM, name: 'Washer A' });
+    itemStore.add({ ...BASE_ITEM, name: 'Washer B' });
     const [a, b] = snapshot();
 
-    applianceStore.remove(a.id);
+    itemStore.remove(a.id);
 
     const items = snapshot();
     expect(items).toHaveLength(1);
@@ -133,17 +149,17 @@ describe('applianceStore – remove', () => {
   });
 
   it('results in an empty store after removing the last item', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
+    itemStore.add({ ...BASE_ITEM });
     const { id } = snapshot()[0];
 
-    applianceStore.remove(id);
+    itemStore.remove(id);
 
     expect(snapshot()).toHaveLength(0);
   });
 
   it('is a no-op for an id that does not exist', () => {
-    applianceStore.add({ ...BASE_APPLIANCE });
-    applianceStore.remove('non-existent-id');
+    itemStore.add({ ...BASE_ITEM });
+    itemStore.remove('non-existent-id');
     expect(snapshot()).toHaveLength(1);
   });
 });
