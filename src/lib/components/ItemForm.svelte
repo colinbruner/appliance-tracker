@@ -86,7 +86,7 @@
             value={id}
             bind:group={category}
             onchange={handleCategoryChange}
-            disabled={!!item}
+            disabled={!!item?.id}
           />
           <span class="cat-dot" style="background: {meta.color};"></span>
           <span>{meta.label}</span>

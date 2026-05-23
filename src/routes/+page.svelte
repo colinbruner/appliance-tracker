@@ -2,6 +2,7 @@
   import { itemStore } from '$lib/stores/items.js';
   import { themeStore } from '$lib/stores/theme.js';
   import { getItemStatus, formatCurrency } from '$lib/utils/itemUtils.js';
+  import { CATEGORIES } from '$lib/data/itemTypes.js';
   import Timeline from '$lib/components/Timeline.svelte';
 
   let items = $derived($itemStore);
@@ -24,6 +25,20 @@
 
   // Asset items for timeline (projects don't have lifespans)
   let assetItems = $derived(items.filter(i => i.category !== 'projects'));
+
+  // Per-category cost breakdown
+  let categoryCosts = $derived((() => {
+    const costs = {};
+    for (const item of items) {
+      const cat = item.category || 'appliances';
+      if (!costs[cat]) costs[cat] = { total: 0, count: 0 };
+      costs[cat].count++;
+      costs[cat].total += item.purchasePrice ?? 0;
+    }
+    return Object.entries(CATEGORIES)
+      .map(([id, meta]) => ({ id, ...meta, ...(costs[id] ?? { total: 0, count: 0 }) }))
+      .filter(c => c.count > 0);
+  })());
 </script>
 
 <svelte:head>
@@ -58,6 +73,25 @@
       </div>
     {/if}
   </div>
+
+  <!-- Cost by Category -->
+  {#if categoryCosts.length > 1 && stats.totalInvested > 0}
+    <section class="card-section">
+      <h2 class="section-heading">Cost by Category</h2>
+      <div class="cost-breakdown">
+        {#each categoryCosts as cat}
+          {#if cat.total > 0}
+            <div class="cost-row">
+              <span class="cost-dot" style="background: {cat.color};"></span>
+              <span class="cost-cat">{cat.label}</span>
+              <span class="cost-count">{cat.count} {cat.count === 1 ? 'item' : 'items'}</span>
+              <span class="cost-amount" style="color: {cat.color};">{formatCurrency(cat.total)}</span>
+            </div>
+          {/if}
+        {/each}
+      </div>
+    </section>
+  {/if}
 
   <!-- Needs Attention -->
   <section class="card-section">
@@ -180,6 +214,41 @@
     color: var(--text-3);
     margin-top: -0.5rem;
     margin-bottom: 1rem;
+  }
+
+  /* Cost by Category */
+  .cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .cost-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.25rem;
+  }
+  .cost-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cost-cat {
+    font-size: 0.875rem;
+    font-weight: 550;
+    color: var(--text-1);
+    flex: 1;
+  }
+  .cost-count {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .cost-amount {
+    font-size: 0.9rem;
+    font-weight: 650;
+    min-width: 70px;
+    text-align: right;
   }
 
   /* Needs Attention */
