@@ -19,13 +19,19 @@ export async function getManager() {
     authority: import.meta.env.VITE_OIDC_AUTHORITY,
     client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
     redirect_uri: `${window.location.origin}/callback`,
+    silent_redirect_uri: `${window.location.origin}/silent-renew`,
     post_logout_redirect_uri: `${window.location.origin}/`,
     response_type: 'code',
     scope: 'openid profile email',
+    automaticSilentRenew: true,
     userStore: new WebStorageStateStore({ store: window.localStorage }),
   });
   _manager.events.addUserLoaded(u => currentUser.set(u));
   _manager.events.addUserUnloaded(() => currentUser.set(null));
+  _manager.events.addSilentRenewError(() => {
+    console.warn('Silent token renewal failed, session may have expired');
+    currentUser.set(null);
+  });
   return _manager;
 }
 

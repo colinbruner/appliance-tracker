@@ -30,14 +30,12 @@ function persist(list) {
 }
 
 // --- Supabase field mapping ---
-// NOTE: category, completion_date, final_cost are NOT sent to Supabase yet.
-// The DB migration (Step 5) hasn't added these columns. Once it runs,
-// uncomment the lines below and update fromRow defaults.
 
 function toRow(item) {
   return {
     id: item.id,
     user_id: _userId,
+    category: item.category || 'appliances',
     type: item.type || null,
     name: item.name || null,
     brand: item.brand || null,
@@ -47,10 +45,8 @@ function toRow(item) {
     expected_lifespan: item.expectedLifespan ?? null,
     notes: item.notes || null,
     replacement_plan: item.replacementPlan || null,
-    // TODO (Step 5 migration): add these columns
-    // category: item.category || 'appliances',
-    // completion_date: item.completionDate || null,
-    // final_cost: item.finalCost ?? null,
+    completion_date: item.completionDate || null,
+    final_cost: item.finalCost ?? null,
   };
 }
 
@@ -74,7 +70,7 @@ function fromRow(row) {
 
 async function loadFromSupabase() {
   const { data, error } = await getSupabase()
-    .from('appliances')
+    .from('items')
     .select('*')
     .eq('user_id', _userId);
   if (error) {
